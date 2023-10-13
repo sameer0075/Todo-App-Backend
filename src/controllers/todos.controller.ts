@@ -8,7 +8,7 @@ const Todo = require("../models/todos.model");
 // make a controller for get all todos
 const getAllTodos = async (req:Request, res:Response) => {
   try {
-    const todos = await Todo.find({}).sort({ createdAt: -1 });
+    const todos = await Todo.find({}).sort({ createdAt: -1 }).select('_id title description status');;
       res.status(200).json({
         message: "Get all todos successfully.",
         data: todos,
@@ -22,7 +22,7 @@ const getAllTodos = async (req:Request, res:Response) => {
 const getATodo = async (req:Request, res:Response) => {
   try {
     const { id: todoId } = req.params;
-    const todo = await Todo.findOne({ _id: todoId });
+    const todo = await Todo.findOne({ _id: todoId }).select('_id title description status');
 
     if (!todo) {
       res.status(403).json({ msg: `No Todo with id: ${todoId}` });
@@ -53,12 +53,18 @@ const createATodo = async (req:Request, res:Response) => {
       status: newTodo.status,
       createdAt: newTodo.createdAt,
     });
-  
     // Save the new Todo instance to the database
     await todo.save();
+    const response = {
+      _id:todo._id,
+      title: newTodo.title,
+      description: newTodo.description,
+      status: newTodo.status,
+    }
+  
     return res.status(200).json({
       message: "Create a new todo successfully.",
-      data:todo
+      data:response
     });
   } catch(error:any) {
     res.status(422).json({ error: error.message });
@@ -81,7 +87,7 @@ const updateATodo = async (req:Request, res:Response) => {
       description: newTodo.description,
       status: newTodo.status,
     };
-    const todo = await Todo.findByIdAndUpdate({_id:id}, todoPayload, { new: true, runValidators: true });
+    const todo = await Todo.findByIdAndUpdate({_id:id}, todoPayload, { new: true, runValidators: true }).select('_id title description status');;
 
     if (!todo) {
       res.status(403).json({ msg: `No todo with id: ${id}` });
@@ -100,6 +106,8 @@ const updateATodo = async (req:Request, res:Response) => {
 const deleteATodo = async (req:Request, res:Response) => {
   try {
     const { id: todoId } = req.params;
+    const savedTodo = await Todo.findOne({ _id: todoId }).select('_id title description status');
+
     const todo = await Todo.findByIdAndDelete(todoId);
 
     if (!todo) {
@@ -107,7 +115,7 @@ const deleteATodo = async (req:Request, res:Response) => {
     } else {
       res.status(200).json({
         message: `Todo with id: ${todoId} deleted successfully.`,
-        data: todo,
+        data: savedTodo,
       });
     }
   } catch (error:any) {
