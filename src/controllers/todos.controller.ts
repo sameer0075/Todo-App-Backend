@@ -10,11 +10,12 @@ const getAllTodos = async (req:Request, res:Response) => {
   try {
     const todos = await Todo.find({}).sort({ createdAt: -1 }).select('_id title description status');;
       res.status(200).json({
+        status:true,
         message: "Get all todos successfully.",
         data: todos,
       });
   } catch (error:any) {
-    res.status(422).json({ error: error.message });
+    res.status(422).json({ status:false, error: error.message });
   }
 };
 
@@ -25,15 +26,16 @@ const getATodo = async (req:Request, res:Response) => {
     const todo = await Todo.findOne({ _id: todoId }).select('_id title description status');
 
     if (!todo) {
-      res.status(403).json({ msg: `No Todo with id: ${todoId}` });
+      res.status(403).json({ status:false, error: `No Todo with id: ${todoId}` });
     } else {
       res.status(200).json({
+        status:true,
         message: "Get a todo successfully.",
         data: todo,
       });
     }
   } catch (error:any) {
-    res.status(422).json({ error: error.message });
+    res.status(422).json({ status:false, error: error.message });
   }
 };
 
@@ -44,7 +46,21 @@ const createATodo = async (req:Request, res:Response) => {
     const errors = await validate(newTodo);
 
     if (errors.length > 0) {
-      return res.status(422).json({ errors });
+      const validationErrors = {};
+      errors.forEach((error) => {
+        const constraints = error.constraints;
+        if (constraints) {
+          for (const key in constraints) {
+            validationErrors[error.property] = constraints[key];
+          }
+        }
+      });
+
+      return res.status(422).json({ status: false, error: validationErrors });
+    }
+
+    if (!newTodo.status) {
+      newTodo.status = "ACTIVE";
     }
 
     const todo = new Todo({
@@ -63,11 +79,12 @@ const createATodo = async (req:Request, res:Response) => {
     }
   
     return res.status(200).json({
+      status:true,
       message: "Create a new todo successfully.",
       data:response
     });
   } catch(error:any) {
-    res.status(422).json({ error: error.message });
+    res.status(422).json({ status:false, error: error.message });
   }
 };
 
@@ -78,7 +95,17 @@ const updateATodo = async (req:Request, res:Response) => {
     const errors = await validate(newTodo);
 
     if (errors.length > 0) {
-      return res.status(422).json({ errors });
+      const validationErrors = {};
+      errors.forEach((error) => {
+        const constraints = error.constraints;
+        if (constraints) {
+          for (const key in constraints) {
+            validationErrors[error.property] = constraints[key];
+          }
+        }
+      });
+
+      return res.status(422).json({ status: false, error: validationErrors });
     }
 
     const { id } = req.params;
@@ -90,15 +117,16 @@ const updateATodo = async (req:Request, res:Response) => {
     const todo = await Todo.findByIdAndUpdate({_id:id}, todoPayload, { new: true, runValidators: true }).select('_id title description status');;
 
     if (!todo) {
-      res.status(403).json({ msg: `No todo with id: ${id}` });
+      res.status(403).json({ status:false, error: `No todo with id: ${id}` });
     } else {
       res.status(200).json({
-        msg: `Todo with id: ${id} updated successfully.`,
+        status:true,
+        message: `Todo with id: ${id} updated successfully.`,
         todo: todo,
       });
     }
   } catch (error:any) {
-    res.status(422).json({ error: error.message });
+    res.status(422).json({ status:false, error: error.message });
   }
 };
 
@@ -111,15 +139,16 @@ const deleteATodo = async (req:Request, res:Response) => {
     const todo = await Todo.findByIdAndDelete(todoId);
 
     if (!todo) {
-      return res.status(403).json({ msg: `No todo with id: ${todoId}` });
+      return res.status(403).json({ status:false, error: `No todo with id: ${todoId}` });
     } else {
       res.status(200).json({
+        status:true,
         message: `Todo with id: ${todoId} deleted successfully.`,
         data: savedTodo,
       });
     }
   } catch (error:any) {
-    res.status(422).json({ error: error.message });
+    res.status(422).json({ status:false, error: error.message });
   }
 };
 

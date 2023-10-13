@@ -1,5 +1,9 @@
-import { IsString, IsOptional, IsIn, IsDate, IsNotEmpty } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsDate, IsNotEmpty, IsEnum } from 'class-validator';
 
+enum StatusEnum {
+  ACTIVE,
+  INACTIVE
+}
 export class TodoDto {
   @IsString({ message: 'Description must be a string' })
   @IsNotEmpty()
@@ -9,8 +13,9 @@ export class TodoDto {
   @IsOptional()
   description?: string;
 
-  @IsIn(['ACTIVE', 'INACTIVE'], { message: 'Status must be "ACTIVE" or "INACTIVE"' })
-  @IsOptional()
+  @IsEnum(StatusEnum, {
+    message: 'Status must be either "ACTIVE" or "INACTIVE"',
+  })  @IsOptional()
   status?: string;
 
   @IsDate({ message: 'Invalid date format' })
